@@ -1,28 +1,20 @@
 import React from 'react'
 import  prisma from '@/utilities/dbInit'
-import { LogDetails } from '../_interfaces/logModel'
+import { columns, LogDetails } from '../_interfaces/logModel'
+import { DataTable } from './DataTable'
 
 const LogsHistory = async () => {
-  const logs = await prisma.log.findMany()
+  const logs: LogDetails[] = await prisma.log.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    take: 10
+  })
 
   return (
     <section>
       <h2>Log History</h2>
-      <p>Log History content goes here</p>
-      {
-        logs.map((log: LogDetails) => (
-          <div key={log.id}>
-            <h3>User Input</h3>
-            <p>{log.userInput}</p>
-            <h3>LLM Response</h3>
-            <p>{log.llmResponse}</p>
-            <h3>Vectara Score</h3>
-            <p>{log.vectaraScore}</p>
-            <h3>Education Score</h3>
-            <p>{log.educationScore}</p>
-          </div>
-        ))
-      }
+      <DataTable columns={columns} data={logs} />
     </section>
   )
 }
