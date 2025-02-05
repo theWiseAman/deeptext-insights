@@ -24,6 +24,9 @@ RUN npm install
 ################################################################################
 # Create a stage for building the application.
 # Copy the rest of the source files into the image.
+COPY prisma ./prisma
+RUN npx prisma generate
+
 COPY . .
 
 # Expose the port that the application listens on.

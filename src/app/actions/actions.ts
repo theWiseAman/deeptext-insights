@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 const addLog = async (formData: FormData) => {
   try {
     const userInput = formData.get('userInput') as string
-    const url = 'http://localhost:8000/api/v1/llmScore'
+    const url = process.env.FASTAPI_SERVER_URL + '/api/v1/llmScore'
     const response = await fetch(url, {
       method: 'POST',
       body: JSON.stringify({

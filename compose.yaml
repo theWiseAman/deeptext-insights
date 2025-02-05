@@ -30,32 +30,49 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=deeptext
+      POSTGRES_DB: deeptext
+      POSTGRES_PASSWORD: CkE8^NT@m6WVEp1^XFUY
+  app:
+    build:
+      context: .
+    image: theWiseAman/deeptext-nextjs
+    environment:
+      DATABASE_URL: postgresql://postgres:CkE8^NT@m6WVEp1^XFUY@db:5432/deeptext
+      FASTAPI_SERVER_URL: http://fastapi:8000
+    ports:
+      - 3000:3000
+    command: sh -c "npx prisma db push && npm run dev"
+    depends_on:
+      - fastapi
+      - db
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+          ignore:
+            - node_modules
+            - .next
+        - action: rebuild
+          path: package.json
+  fastapi:
+    build:
+      context: ./fastapi
+    ports:
+      - 8000:8000
+    environment:
+      - HF_HOME="/fastapi/cache"
+      - LANGSMITH_PROJECT="deeptext-insights"
+      - LANGSMITH_API_KEY="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"
+      - LANGSMITH_TRACING=true
+    volumes:
+      - cache:/fastapi/cache
+      - ./fastapi:/fastapi
+    depends_on:
+      - db
 
 volumes:
   db-data:
-
-# services:
-#   app:
-#     build:
-#       context: .
-#     image: theWiseAman/deeptext-insights-webapp
-#     environment:
-#       NODE_ENV: production
-#     ports:
-#       - 3000:3000
-#     depends_on:
-#       db:
-#         condition: service_healthy
-#     develop:
-#       watch:
-#         - action: sync
-#           path: ./src
-#           target: /app/src
-#           ignore:
-#             - node_modules
-#             - .next
-#         - action: rebuild
-#           path: package.json
+  cache:
 
 

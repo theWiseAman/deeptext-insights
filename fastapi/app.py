@@ -5,6 +5,7 @@ from langserve import add_routes
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification, AutoModelForCausalLM
+from langchain_huggingface import HuggingFacePipeline
 import os
 
 class UserInput(BaseModel):
@@ -18,8 +19,9 @@ class LlmScoreResponse(BaseModel):
 
 load_dotenv()
 
-os.environ["LANGSMITH_API_KEY"]=os.getenv("LANGSMITH_API_KEY")
+os.environ["LANGSMITH_API_KEY"]= os.getenv("LANGSMITH_API_KEY")
 os.environ["LANGSMITH_TRACING"] = os.getenv("LANGSMITH_TRACING")
+os.environ["HF_HOME"] = os.getenv("HF_HOME")
 
 app = FastAPI(
     title="LangChain Server",
@@ -28,27 +30,32 @@ app = FastAPI(
 )
 router = APIRouter()
 
-prompt=ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are an AI assistant who help users get correct information about a topic. Generate a brief summary about the topic asked by the user in at max 200 words."
-        ),
-        (
-            "user",
-            "Question:{question}"
-        )
-    ]
-)
 
-llmModel = Ollama(model='llama3')
-chain = prompt|llmModel
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
-add_routes(
-    app,
-    chain,
-    path="/api/v1/llmResponse",
-)
+# prompt=ChatPromptTemplate.from_messages(
+#     [
+#         (
+#             "system",
+#             "You are an AI assistant who help users get correct information about a topic. Generate a brief summary about the topic asked by the user in at max 200 words."
+#         ),
+#         (
+#             "user",
+#             "Question:{question}"
+#         )
+#     ]
+# )
+
+# llmModel = Ollama(model='llama3')
+# chain = prompt|llmModel
+
+# add_routes(
+#     app,
+#     chain,
+#     path="/api/v1/llmResponse",
+# )
 
 @router.post("/api/v1/llmScore")
 async def get_score(body: UserInput, response_model=LlmScoreResponse):
@@ -57,7 +64,9 @@ async def get_score(body: UserInput, response_model=LlmScoreResponse):
 
         gpt_tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
         gpt_model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
-        llmOutput = pipeline("text-generation", model=gpt_model, tokenizer=gpt_tokenizer, max_new_tokens=200)(user_input)[0]['generated_text']
+        text_generation_pipeline = pipeline("text-generation", model=gpt_model, tokenizer=gpt_tokenizer, max_length=200, truncation=True)
+        hf_pipeline = HuggingFacePipeline(pipeline=text_generation_pipeline)
+        llmOutput: str = hf_pipeline.invoke(user_input)
 
         tokenizer = AutoTokenizer.from_pretrained("HuggingFaceTB/fineweb-edu-classifier")
         education_model = AutoModelForSequenceClassification.from_pretrained("HuggingFaceTB/fineweb-edu-classifier")
@@ -69,23 +78,9 @@ async def get_score(body: UserInput, response_model=LlmScoreResponse):
         pairs = [
             (user_input, llmOutput),
         ]
-        vectara_prompt = f"""
-        Determine if the LLM response is consistent with the given user input? \n\n
-        User Input: {user_input} \n\n
-        LLM Response: {llmOutput}
-        """
-        print("Vectara Prompt: ", vectara_prompt)
-        vectara_input_pairs = [prompt.format(text1=pair[0], text2=pair[1]) for pair in pairs]
-        vectara_classifier = pipeline(
-            "text-classification",
-            model='vectara/hallucination_evaluation_model',
-            tokenizer=AutoTokenizer.from_pretrained('google/flan-t5-base'),
-            trust_remote_code=True
-        )
-        vectara_full_scores = vectara_classifier(vectara_input_pairs, top_k=None)
-        vectara_simple_scores = [score_dict['score'] for score_for_both_labels in vectara_full_scores for score_dict in score_for_both_labels if score_dict['label'] == 'consistent']
-        vectara_score = round(sum(vectara_simple_scores) / len(vectara_simple_scores), 3)
-        print("Vectara: ", vectara_score)
+        vectara_model = AutoModelForSequenceClassification.from_pretrained('vectara/hallucination_evaluation_model', trust_remote_code=True)
+        vectara_full_scores = vectara_model.predict(pairs)
+        vectara_score = round(vectara_full_scores.item(), 3)
 
         return {
             "userInput": user_input,

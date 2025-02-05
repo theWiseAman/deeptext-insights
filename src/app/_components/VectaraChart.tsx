@@ -1,13 +1,11 @@
-"use client"
+"use client";
 
-import { TrendingUp } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -18,35 +16,26 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-
-const VectaraChart = () => {
+const VectaraChart = ({ chartData }: { chartData: {bin: string, frequency: number}[]}) => {
   const chartConfig = {
-    desktop: {
-      label: "Desktop",
+    frequency: {
+      label: "Frequency",
       color: "hsl(var(--chart-1))",
     },
   } satisfies ChartConfig
-  
-  const chartData = [
-    { month: "January", desktop: 186 },
-    { month: "February", desktop: 305 },
-    { month: "March", desktop: 237 },
-    { month: "April", desktop: 73 },
-    { month: "May", desktop: 209 },
-    { month: "June", desktop: 214 },
-  ]
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bar Chart</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>Vectara Histogram</CardTitle>
+        <CardDescription>Vectara Score Frequency Histogram</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey="bin"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
@@ -54,20 +43,12 @@ const VectaraChart = () => {
             />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent />}
             />
-            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8} />
+            <Bar dataKey="frequency" fill="var(--color-frequency)" radius={4} />
           </BarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="leading-none text-muted-foreground">
-          Showing total visitors for the last 6 months
-        </div>
-      </CardFooter>
     </Card>
   )
 }

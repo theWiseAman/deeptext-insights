@@ -192,6 +192,10 @@ curl -X POST http://localhost:8000/api/v1/analyze -H "Content-Type: application/
 
 ---
 
+## 📚 Resources
+
+- [FastAPI Containerization](https://www.youtube.com/watch?v=-bgb9oBIKxQ)
+
 ## 📄 License
 
 This project is licensed under the MIT License.
@@ -200,4 +204,4 @@ This project is licensed under the MIT License.
 
 ## 👨‍💻 Author
 
-Your Name - [GitHub](https://github.com/your-profile) | [LinkedIn](https://linkedin.com/in/your-profile)
+Your Name - [GitHub](https://github.com/theWiseAman) | [LinkedIn](https://linkedin.com/in/your-profile)

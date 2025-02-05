@@ -13,3 +13,4 @@ sse_starlette
 torch
 torchvision
 torchaudio
+langchain_huggingface
